@@ -1,0 +1,94 @@
+#!/usr/bin/python3
+
+import sys
+import fileinput
+from math import pow, sqrt
+
+ts = []
+prevMinMax = [0.0, 0.0]
+weirdest = [0.0, 0.0, 0.0, 0.0, 0.0]
+weirdDist = [0.0, 0.0, 0.0, 0.0, 0.0]
+period = 0 ; switches = 0
+
+def getTIA():
+    avg = 0.0;
+    print("g=", end='')
+    try:
+        for n in range(1, period + 1):
+            if (ts[-n] > ts[-(n + 1)]):
+                avg += ts[-n] - ts[-(n + 1)]
+        print("%.2f" % (avg / period), end='')
+    except:
+        print("nan", end='')
+
+
+def getRTE():
+    print("\tr=", end='')
+    try:
+        prev = 0
+        if (len(ts) > period + 2):
+            prev = round(100 * (ts[-2] - ts[-(period + 2)]) / ts[-(period + 2)])
+        act = round(100 * (ts[-1] - ts[-(period + 1)]) / ts[-(period + 1)])
+        print("%d%%" % act, end='')
+        return (False if ((prev * act) >= 0) else True)
+    except:
+        print("nan", end='')
+        return False
+
+
+def checkWeirdest(ranged):
+    actDist = ((ts[-1] - ranged[0]) if (ts[-1] > ranged[0]) else (ranged[1] - ts[-1]))
+    
+    for n in range(0, 5):
+        if (weirdDist[n] < actDist):
+            weirdDist[n] = actDist
+            weirdest[n] = ts[-1]
+            break
+
+
+def getSDev():
+    global prevMinMax
+    esp = 0.0; var = 0.0
+
+    print("\ts=", end='')
+    try:
+        for n in range(1, period + 1):
+            esp += ts[-n]
+        esp /= period
+        for n in range(1, period + 1):
+            var += pow((ts[-n] - esp), 2)
+        var = sqrt(var / period)
+        print("%.2f" % var, end='')
+    except:
+        print("nan", end='')
+    # checkWeirdest(prevMinMax)
+    # prevMinMax = [ts[-1] - var, ts[-1] + var] # may be not necessary
+
+
+def groundHog():
+    global switches
+    hasSwitched = False
+
+    while True:
+        tmp = input()
+        if (tmp == "STOP"):
+            break
+        ts.append(float(tmp))
+        getTIA()
+        hasSwitched = getRTE()
+        getSDev()
+        if (hasSwitched):
+            print("\ta switch occurs", end='')
+            switches += 1
+        print()
+
+
+try:
+    if (len(sys.argv) != 2):
+        exit(84)
+    period = int(sys.argv[1])
+    groundHog()
+    print("Global tendency switched %d times" % switches)
+    print("5 weirdest values are", weirdest)
+except:
+    exit(84)
