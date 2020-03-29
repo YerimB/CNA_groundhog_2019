@@ -56,7 +56,7 @@ def getSDev():
         print("%.2f" % var, end='')
         sVals.append(var) # whole curve
         bollinger = [esperance - (3 * var), esperance + (3 * var)]
-        print("\nMean = [%.2f] | Bollinger = [%.3f, %.3f]" % (esperance, bollinger[0], bollinger[1]))
+        # print("\nMean = [%.2f] | Bollinger = [%.3f, %.3f]" % (esperance, bollinger[0], bollinger[1]))
     except:
         print("nan", end='')
 
@@ -77,9 +77,12 @@ def checkWeirdest():
     if (len(ts) <= period + 1 or (ts[-1] >= bollinger[0] and ts[-1] <= bollinger[1])):
         return
     oddRatio = (bollinger[0] - ts[-1]) if (ts[-1] < bollinger[0]) else (ts[-1] - bollinger[1])
-    print("Found oddRatio = [%.3f]" % oddRatio)
+    # print("Found oddRatio = [%.3f]" % oddRatio)
     if (min(weirdRatio) < oddRatio):
+        print("[WEIRD VALUE DETECTED] - Value : [%.2f], odd ratio : [%.3f]" % (ts[-1], oddRatio))
         replaceWeirdestValue(oddRatio)
+    else:
+        print("[NOT SO WEIRD] - Value : [%.2f], odd ratio : [%.3f]" % (ts[-1], oddRatio))
 
 
 def groundHog():
