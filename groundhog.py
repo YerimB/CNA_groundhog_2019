@@ -53,7 +53,7 @@ def getSDev():
             var += pow((ts[-n] - esp), 2)
         var = sqrt(var / period)
         print("%.2f" % var, end='')
-        bollinger = [esp - (3 * var), esp + (3 * var)]
+        bollinger = [esp - (2 * var), esp + (2 * var)]
     except:
         print("nan", end='')
 
@@ -129,6 +129,8 @@ try:
         exit(84)
     period = int(sys.argv[1])
     groundHog()
+    if (len(ts) < period):
+        exit(84)
     print("Global tendency switched %d times" % switches)
     print("5 weirdest values are", SortWeirdValues())
 except:
