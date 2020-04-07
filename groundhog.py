@@ -8,7 +8,7 @@ ts = []
 bollinger = [0.0, 0.0]
 weirdest = [0.0, 0.0, 0.0, 0.0, 0.0]
 weirdRatio = [0.0, 0.0, 0.0, 0.0, 0.0]
-period = 0 ; switches = 0
+period = 0 ; switches = 0 ; lastRelative = 0.0
 
 def getTIA():
     avg = 0.0
@@ -23,14 +23,18 @@ def getTIA():
 
 
 def getRTE():
+    global lastRelative
+
     print("\tr=", end='')
     try:
-        prev = 0
-        if (len(ts) > period + 2):
-            prev = round(100 * (ts[-2] - ts[-(period + 2)]) / ts[-(period + 2)])
-        act = round(100 * (ts[-1] - ts[-(period + 1)]) / ts[-(period + 1)])
+        start = 0.0; s = False
+        for idx in range(-(period + 1), 0):
+            if (ts[idx] != 0.0): start = ts[idx] ; break
+        act = round(100 * ((ts[-1] - start) / abs(start)))
         print("%d%%" % act, end='')
-        return (False if ((prev * act) > 0) else True) # modified here >= / >
+        if (act * lastRelative < 0): s = True
+        lastRelative = act
+        return (s)
     except:
         print("nan%", end='')
         return False
@@ -110,6 +114,7 @@ def groundHog():
         if (tmp == "STOP"):
             break
         ts.append(float(tmp))
+        print(ts[-1])
         checkWeirdest()
         getTIA()
         hasSwitched = getRTE()
