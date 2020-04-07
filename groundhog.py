@@ -3,11 +3,8 @@
 import sys
 from math import pow, sqrt
 
-gVals = [] # not in project * 3
-rVals = []
-sVals = []
-
 ts = []
+
 bollinger = [0.0, 0.0]
 weirdest = [0.0, 0.0, 0.0, 0.0, 0.0]
 weirdRatio = [0.0, 0.0, 0.0, 0.0, 0.0]
@@ -21,7 +18,6 @@ def getTIA():
             if (ts[-n] > ts[-(n + 1)]):
                 avg += ts[-n] - ts[-(n + 1)]
         print("%.2f" % (avg / period), end='')
-        gVals.append(avg / period) # whole curve
     except:
         print("nan", end='')
 
@@ -34,29 +30,26 @@ def getRTE():
             prev = round(100 * (ts[-2] - ts[-(period + 2)]) / ts[-(period + 2)])
         act = round(100 * (ts[-1] - ts[-(period + 1)]) / ts[-(period + 1)])
         print("%d%%" % act, end='')
-        rVals.append(act) # whole curve
-        return (False if ((prev * act) >= 0) else True)
+        return (False if ((prev * act) > 0) else True) # modified here >= / >
     except:
-        print("nan", end='')
+        print("nan%", end='')
         return False
 
 
 def getSDev():
     global bollinger
-    esperance = 0.0 ; var = 0.0
+    esp = 0.0 ; var = 0.0
 
     print("\ts=", end='')
     try:
         for n in range(1, period + 1):
-            esperance += ts[-n]
-        esperance /= period
+            esp += ts[-n]
+        esp /= period
         for n in range(1, period + 1):
-            var += pow((ts[-n] - esperance), 2)
+            var += pow((ts[-n] - esp), 2)
         var = sqrt(var / period)
         print("%.2f" % var, end='')
-        sVals.append(var) # whole curve
-        bollinger = [esperance - (3 * var), esperance + (3 * var)]
-        # print("\nMean = [%.2f] | Bollinger = [%.3f, %.3f]" % (esperance, bollinger[0], bollinger[1]))
+        bollinger = [esp - (3 * var), esp + (3 * var)]
     except:
         print("nan", end='')
 
@@ -76,13 +69,36 @@ def replaceWeirdestValue(newDist):
 def checkWeirdest():
     if (len(ts) <= period + 1 or (ts[-1] >= bollinger[0] and ts[-1] <= bollinger[1])):
         return
-    oddRatio = (bollinger[0] - ts[-1]) if (ts[-1] < bollinger[0]) else (ts[-1] - bollinger[1])
-    # print("Found oddRatio = [%.3f]" % oddRatio)
-    if (min(weirdRatio) < oddRatio):
-        print("[WEIRD VALUE DETECTED] - Value : [%.2f], odd ratio : [%.3f]" % (ts[-1], oddRatio))
-        replaceWeirdestValue(oddRatio)
-    else:
-        print("[NOT SO WEIRD] - Value : [%.2f], odd ratio : [%.3f]" % (ts[-1], oddRatio))
+    oddDiff = (bollinger[0] - ts[-1]) if (ts[-1] < bollinger[0]) else (ts[-1] - bollinger[1])
+    if (min(weirdRatio) < oddDiff):
+        replaceWeirdestValue(oddDiff)
+
+
+def SortWeirdValues():
+    global weirdest
+    newList = [
+        [weirdest[0], weirdRatio[0]],
+        [weirdest[1], weirdRatio[1]],
+        [weirdest[2], weirdRatio[2]],
+        [weirdest[3], weirdRatio[3]],
+        [weirdest[4], weirdRatio[4]]
+    ]
+    l = len(newList)
+    for i in range(0, l):
+        for j in range(0, l-i-1):
+            if (newList[j][1] > newList[j + 1][1]):
+                tmp = newList[j]
+                newList[j] = newList[j + 1]
+                newList[j + 1] = tmp
+    newList.reverse()
+    weirdest = [
+        newList[0][0],
+        newList[1][0],
+        newList[2][0],
+        newList[3][0],
+        newList[4][0]
+    ]
+    return weirdest
 
 
 def groundHog():
@@ -94,7 +110,6 @@ def groundHog():
         if (tmp == "STOP"):
             break
         ts.append(float(tmp))
-        print(ts[-1])
         checkWeirdest()
         getTIA()
         hasSwitched = getRTE()
@@ -105,12 +120,12 @@ def groundHog():
         print()
 
 
-# try:
-if (len(sys.argv) != 2):
+try:
+    if (len(sys.argv) != 2):
+        exit(84)
+    period = int(sys.argv[1])
+    groundHog()
+    print("Global tendency switched %d times" % switches)
+    print("5 weirdest values are", SortWeirdValues())
+except:
     exit(84)
-period = int(sys.argv[1])
-groundHog()
-print("Global tendency switched %d times" % switches)
-print("5 weirdest values are", weirdest)
-# except:
-#     exit(84)
