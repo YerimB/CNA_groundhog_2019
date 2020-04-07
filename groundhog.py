@@ -114,7 +114,6 @@ def groundHog():
         if (tmp == "STOP"):
             break
         ts.append(float(tmp))
-        print(ts[-1])
         checkWeirdest()
         getTIA()
         hasSwitched = getRTE()
