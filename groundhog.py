@@ -4,10 +4,10 @@ import sys
 from math import pow, sqrt
 
 ts = []
+weirdRatio = []
 
 bollinger = [0.0, 0.0]
 weirdest = [0.0, 0.0, 0.0, 0.0, 0.0]
-weirdRatio = [0.0, 0.0, 0.0, 0.0, 0.0]
 period = 0 ; switches = 0 ; lastRelative = 0.0
 
 def getTIA():
@@ -20,6 +20,7 @@ def getTIA():
         print("%.2f" % (avg / period), end='')
     except:
         print("nan", end='')
+        return
 
 
 def getRTE():
@@ -33,7 +34,8 @@ def getRTE():
         act = round(100 * ((ts[-1] - start) / abs(start)))
         print("%d%%" % act, end='')
         if (act * lastRelative < 0): s = True
-        lastRelative = act
+        if (act != 0):
+            lastRelative = act
         return (s)
     except:
         print("nan%", end='')
@@ -56,57 +58,33 @@ def getSDev():
         bollinger = [esp - (2 * var), esp + (2 * var)]
     except:
         print("nan", end='')
-
-
-def replaceWeirdestValue(newDist):
-    n = 0
-    while (weirdRatio[n] != min(weirdRatio)):
-        n += 1
-    while (n < 4):
-        weirdRatio[n] = weirdRatio[n + 1]
-        weirdest[n] = weirdest[n + 1]
-        n += 1
-    weirdRatio[n] = newDist
-    weirdest[n] = ts[-1]
-
-
-def checkWeirdest():
-    if (len(ts) <= period + 1 or (ts[-1] >= bollinger[0] and ts[-1] <= bollinger[1])):
         return
-    oddDiff = (bollinger[0] - ts[-1]) if (ts[-1] < bollinger[0]) else (ts[-1] - bollinger[1])
-    if (min(weirdRatio) < oddDiff):
-        replaceWeirdestValue(oddDiff)
 
 
-def SortWeirdValues():
+def storeWeirdRatio():
+    if (len(ts) <= period + 1):
+        oddDiff = 987654321.0
+    elif (abs(bollinger[0] - ts[-2]) < abs(bollinger[1] - ts[-2])):
+        oddDiff = abs(bollinger[0] - ts[-2])
+    else:
+        oddDiff = abs(bollinger[1] - ts[-2])
+    # print("Value = [%.1f], Oddvalue = [%.3f]" % (ts[-1], oddDiff))
+    weirdRatio.append(oddDiff)
+
+
+def getOutliers():
     global weirdest
-    newList = [
-        [weirdest[0], weirdRatio[0]],
-        [weirdest[1], weirdRatio[1]],
-        [weirdest[2], weirdRatio[2]],
-        [weirdest[3], weirdRatio[3]],
-        [weirdest[4], weirdRatio[4]]
-    ]
-    l = len(newList)
-    for i in range(0, l):
-        for j in range(0, l-i-1):
-            if (newList[j][1] > newList[j + 1][1]):
-                tmp = newList[j]
-                newList[j] = newList[j + 1]
-                newList[j + 1] = tmp
-    newList.reverse()
-    weirdest = [
-        newList[0][0],
-        newList[1][0],
-        newList[2][0],
-        newList[3][0],
-        newList[4][0]
-    ]
+    
+    for i in range(0, 5):
+        idx = weirdRatio.index(min(weirdRatio))
+        weirdest[i] = ts[idx - 1]
+        weirdRatio.pop(idx)
+        ts.pop(idx - 1)
     return weirdest
 
 
 def groundHog():
-    global switches
+    global switches, weirdRatio
     hasSwitched = False
 
     while True:
@@ -114,7 +92,7 @@ def groundHog():
         if (tmp == "STOP"):
             break
         ts.append(float(tmp))
-        checkWeirdest()
+        storeWeirdRatio()
         getTIA()
         hasSwitched = getRTE()
         getSDev()
@@ -132,6 +110,6 @@ try:
     if (len(ts) < period):
         exit(84)
     print("Global tendency switched %d times" % switches)
-    print("5 weirdest values are", SortWeirdValues())
+    print("5 weirdest values are", getOutliers())
 except:
     exit(84)
