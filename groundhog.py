@@ -89,6 +89,8 @@ def groundHog():
 
     while True:
         tmp = input()
+        if (tmp == "STOP" and len(ts) < period):
+            exit(84)
         if (tmp == "STOP"):
             break
         ts.append(float(tmp))
